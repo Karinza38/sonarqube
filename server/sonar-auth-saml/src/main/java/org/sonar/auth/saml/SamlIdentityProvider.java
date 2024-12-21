@@ -20,14 +20,14 @@
 package org.sonar.auth.saml;
 
 import java.util.regex.Pattern;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletRequestWrapper;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletRequestWrapper;
 import org.sonar.api.server.ServerSide;
 import org.sonar.api.server.authentication.Display;
 import org.sonar.api.server.authentication.OAuth2IdentityProvider;
 import org.sonar.api.server.authentication.UserIdentity;
 import org.sonar.api.server.http.HttpRequest;
-import org.sonar.server.http.JavaxHttpRequest;
+import org.sonar.server.http.JakartaHttpRequest;
 
 @ServerSide
 public class SamlIdentityProvider implements OAuth2IdentityProvider {
@@ -37,12 +37,12 @@ public class SamlIdentityProvider implements OAuth2IdentityProvider {
 
   public static final String RSA_SHA_256_URL = "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256";
 
+  private final SamlAuthenticator samlAuthenticator;
   private final SamlSettings samlSettings;
-  private final SamlMessageIdChecker samlMessageIdChecker;
 
-  public SamlIdentityProvider(SamlSettings samlSettings, SamlMessageIdChecker samlMessageIdChecker) {
+  public SamlIdentityProvider(SamlSettings samlSettings, SamlAuthenticator samlAuthenticator) {
     this.samlSettings = samlSettings;
-    this.samlMessageIdChecker = samlMessageIdChecker;
+    this.samlAuthenticator = samlAuthenticator;
   }
 
   @Override
@@ -75,7 +75,6 @@ public class SamlIdentityProvider implements OAuth2IdentityProvider {
 
   @Override
   public void init(InitContext context) {
-    SamlAuthenticator samlAuthenticator = new SamlAuthenticator(samlSettings, samlMessageIdChecker);
     samlAuthenticator.initLogin(context.getCallbackUrl(), context.generateCsrfState(),
       context.getHttpRequest(), context.getHttpResponse());
   }
@@ -91,8 +90,7 @@ public class SamlIdentityProvider implements OAuth2IdentityProvider {
     //
     HttpRequest processedRequest = useProxyHeadersInRequest(context.getHttpRequest());
 
-    SamlAuthenticator samlAuthenticator = new SamlAuthenticator(samlSettings, samlMessageIdChecker);
-    UserIdentity userIdentity = samlAuthenticator.buildUserIdentity(context, processedRequest);
+    UserIdentity userIdentity = samlAuthenticator.onCallback(context, processedRequest);
     context.authenticate(userIdentity);
     context.redirectToRequestedPage();
 
@@ -101,7 +99,7 @@ public class SamlIdentityProvider implements OAuth2IdentityProvider {
   private static HttpRequest useProxyHeadersInRequest(HttpRequest request) {
     String forwardedScheme = request.getHeader("X-Forwarded-Proto");
     if (forwardedScheme != null) {
-      HttpServletRequest httpServletRequest = new HttpServletRequestWrapper(((JavaxHttpRequest) request).getDelegate()) {
+      HttpServletRequest httpServletRequest = new HttpServletRequestWrapper(((JakartaHttpRequest) request).getDelegate()) {
         @Override
         public String getScheme() {
           return forwardedScheme;
@@ -113,7 +111,7 @@ public class SamlIdentityProvider implements OAuth2IdentityProvider {
           return new StringBuffer(HTTPS_PATTERN.matcher(originalURL.toString()).replaceFirst(forwardedScheme + "://"));
         }
       };
-      return new JavaxHttpRequest(httpServletRequest);
+      return new JakartaHttpRequest(httpServletRequest);
     }
 
     return request;
