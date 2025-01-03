@@ -40,6 +40,12 @@ public class DbVersion202501 implements DbVersion {
         MigrateConfidentialHeaderProperty.class)
       .add(2025_01_001, "Delete removed complexity measures from 'project_measures' table", DeleteRemovedComplexityMeasuresFromProjectMeasures.class)
       .add(2025_01_002, "Delete removed complexity metrics from 'metrics' table", DeleteRemovedComplexityMetrics.class)
+      .add(2025_01_003, "Create index on 'rule_tags' table", CreateIndexOnRuleTagsTable.class)
+      .add(2025_01_004, "Rename 'Sonar Way' without 0 new issues condition to 'Sonar Way(legacy)'", RenameOldSonarWayToLegacy.class)
+      .add(2025_01_005, "Create 'user_ai_tool_usages' table", CreateUserAIToolUsagesTable.class)
+      .add(2025_01_006, "Add 'detected_ai_code' column to 'projects' table", AddDetectedAICodeColumnToProjectsTable.class)
+      .add(2025_01_007, "Create table 'migration_logs'", CreateMigrationLogsTable.class)
+      .add(2025_01_008, "Log message if SAML configuration is not valid", LogMessageIfInvalidSamlSetup.class)
     ;
   }
 }
